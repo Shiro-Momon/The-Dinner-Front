@@ -33,7 +33,11 @@ function KitchenCard({
     <div className="bg-white rounded-xl border p-4 flex flex-col gap-3">
       <div className="flex items-center justify-between">
         <span className="font-semibold text-zinc-800">Order #{order.id}</span>
-        <Badge variant="outline" className="text-xs">Table {order.tableId}</Badge>
+        <Badge variant="outline" className="text-xs">
+          {order.isToGo
+            ? (order.customerName ?? `To-go`)
+            : `Table ${order.tableId}`}
+        </Badge>
       </div>
       <ul className="space-y-1">
         {order.items.map((item) => (

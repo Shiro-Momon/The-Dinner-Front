@@ -87,6 +87,7 @@ export const createOrder = (data: {
   isToGo: boolean
   pricingStrategy: PricingStrategy
   items: { menuItemId: number; quantity: number }[]
+  customerName?: string | null
 }) =>
   apiFetch<OrderResponseDto>("/api/orders", { method: "POST", body: JSON.stringify(data) })
 

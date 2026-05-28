@@ -39,6 +39,7 @@ export interface OrderResponseDto {
   tableId: number | null
   isToGo: boolean
   pricingStrategy: PricingStrategy
+  customerName: string | null
   status: OrderStatus
   items: OrderItemResponseDto[]
   totalAmount: number

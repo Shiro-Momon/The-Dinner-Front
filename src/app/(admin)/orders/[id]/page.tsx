@@ -126,7 +126,7 @@ export default function OrderDetailPage() {
             )}
           </div>
           <p className="text-sm text-zinc-500">
-            {order.tableId ? `Table ${order.tableId}` : "To-go"} · {PRICING_LABELS[order.pricingStrategy] ?? order.pricingStrategy} · Created {new Date(order.createdAt).toLocaleString()}
+            {order.tableId ? `Table ${order.tableId}` : "To-go"}{order.customerName ? ` · ${order.customerName}` : ""} · {PRICING_LABELS[order.pricingStrategy] ?? order.pricingStrategy} · Created {new Date(order.createdAt).toLocaleString()}
             {order.confirmedAt && ` · Confirmed ${new Date(order.confirmedAt).toLocaleString()}`}
             {order.servedAt && ` · Served ${new Date(order.servedAt).toLocaleString()}`}
             {order.paidAt && ` · Paid ${new Date(order.paidAt).toLocaleString()}`}
