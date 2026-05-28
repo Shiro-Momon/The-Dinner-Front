@@ -9,11 +9,13 @@ export type OrderStatus =
 
 export type PaymentMethod = "Cash" | "CreditCard" | "MealVoucher"
 
+export type PricingStrategy = "Standard" | "HappyHour" | "GroupDiscount"
+
 export interface MenuItemResponseDto {
   id: number
   name: string
   price: number
-  category: number
+  category: string
   isAvailable: boolean
 }
 
@@ -34,7 +36,9 @@ export interface OrderItemResponseDto {
 
 export interface OrderResponseDto {
   id: number
-  tableId: number
+  tableId: number | null
+  isToGo: boolean
+  pricingStrategy: PricingStrategy
   status: OrderStatus
   items: OrderItemResponseDto[]
   totalAmount: number

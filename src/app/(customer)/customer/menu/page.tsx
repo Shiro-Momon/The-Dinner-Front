@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge"
 import { Minus, Plus, ShoppingCart, ArrowLeft, CheckCircle } from "lucide-react"
 import { toast } from "sonner"
 
-import { CATEGORY_IDS, CATEGORY_LABEL } from "@/lib/categories"
+import { CATEGORY_KEYS, CATEGORY_LABEL, type CategoryKey } from "@/lib/categories"
 
 function CustomerMenuContent() {
   const router = useRouter()
@@ -20,7 +20,7 @@ function CustomerMenuContent() {
   const [table, setTable] = useState<TableResponseDto | null>(null)
   const [menuItems, setMenuItems] = useState<MenuItemResponseDto[]>([])
   const [quantities, setQuantities] = useState<Record<number, number>>({})
-  const [activeCategory, setActiveCategory] = useState<"all" | number>("all")
+  const [activeCategory, setActiveCategory] = useState<"all" | CategoryKey>("all")
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
@@ -64,6 +64,8 @@ function CustomerMenuContent() {
     try {
       const order = await createOrder({
         tableId: Number(tableId),
+        isToGo: false,
+        pricingStrategy: "Standard",
         items: cartItems.map(({ menuItemId, quantity }) => ({ menuItemId, quantity })),
       })
       setOrderId(order.id)
@@ -78,7 +80,7 @@ function CustomerMenuContent() {
   const filteredMenu =
     activeCategory === "all"
       ? menuItems
-      : menuItems.filter((i) => Number(i.category) === activeCategory)
+      : menuItems.filter((i) => i.category === activeCategory)
 
   if (loading) return <div className="py-24 text-center text-zinc-400">Loading menu…</div>
 
@@ -113,7 +115,7 @@ function CustomerMenuContent() {
 
       {/* Category pills */}
       <div className="flex gap-2 flex-wrap mb-5 -mx-1">
-        {([{ id: "all" as const, label: "Tout" }, ...CATEGORY_IDS.map((c) => ({ id: c, label: CATEGORY_LABEL[c] }))]).map(({ id, label }) => (
+        {([{ id: "all" as const, label: "Tout" }, ...CATEGORY_KEYS.map((c) => ({ id: c, label: CATEGORY_LABEL[c] }))]).map(({ id, label }) => (
           <button
             key={id}
             onClick={() => setActiveCategory(id)}
@@ -137,7 +139,7 @@ function CustomerMenuContent() {
           >
             <div className="min-w-0">
               <p className="font-medium text-zinc-900">{item.name}</p>
-              <p className="text-sm text-zinc-500">{CATEGORY_LABEL[Number(item.category)] ?? item.category}</p>
+              <p className="text-sm text-zinc-500">{CATEGORY_LABEL[item.category as CategoryKey] ?? item.category}</p>
               <p className="text-base font-semibold text-zinc-800 mt-0.5">
                 €{Number(item.price).toFixed(2)}
               </p>

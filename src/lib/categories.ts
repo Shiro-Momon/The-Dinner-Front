@@ -1,10 +1,17 @@
-export const CATEGORY_IDS = [0, 1, 2, 3, 4] as const
-export type CategoryId = (typeof CATEGORY_IDS)[number]
+export const CATEGORY_KEYS = [
+  "Starter",
+  "MainCourse",
+  "Dessert",
+  "Beverage",
+  "Side",
+] as const
 
-export const CATEGORY_LABEL: Record<number, string> = {
-  0: "Entrée",
-  1: "Plat principal",
-  2: "Dessert",
-  3: "Boisson",
-  4: "Accompagnement",
+export type CategoryKey = (typeof CATEGORY_KEYS)[number]
+
+export const CATEGORY_LABEL: Record<CategoryKey, string> = {
+  Starter: "Entrée",
+  MainCourse: "Plat principal",
+  Dessert: "Dessert",
+  Beverage: "Boisson",
+  Side: "Accompagnement",
 }

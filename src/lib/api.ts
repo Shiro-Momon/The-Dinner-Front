@@ -5,6 +5,7 @@ import type {
   PaymentResponseDto,
   OrderStatus,
   PaymentMethod,
+  PricingStrategy,
 } from "@/types"
 
 const BASE = ""
@@ -40,13 +41,13 @@ export const getMenuItem = (id: number) =>
 export const createMenuItem = (data: {
   name: string
   price: number
-  category: number
+  category: string
   isAvailable: boolean
 }) => apiFetch<MenuItemResponseDto>("/api/menu", { method: "POST", body: JSON.stringify(data) })
 
 export const updateMenuItem = (
   id: number,
-  data: { name: string; price: number; category: number; isAvailable: boolean }
+  data: { name: string; price: number; category: string; isAvailable: boolean }
 ) =>
   apiFetch<MenuItemResponseDto>(`/api/menu/${id}`, {
     method: "PUT",
@@ -82,7 +83,9 @@ export const getOrder = (id: number) =>
   apiFetch<OrderResponseDto>(`/api/orders/${id}`)
 
 export const createOrder = (data: {
-  tableId: number
+  tableId: number | null
+  isToGo: boolean
+  pricingStrategy: PricingStrategy
   items: { menuItemId: number; quantity: number }[]
 }) =>
   apiFetch<OrderResponseDto>("/api/orders", { method: "POST", body: JSON.stringify(data) })

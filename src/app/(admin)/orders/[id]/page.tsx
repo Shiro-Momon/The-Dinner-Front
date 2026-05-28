@@ -12,15 +12,14 @@ import {
   readyOrder,
   serveOrder,
   cancelOrder,
-  createPayment,
   getPaymentByOrder,
 } from "@/lib/api"
-import type { OrderResponseDto, MenuItemResponseDto, PaymentMethod } from "@/types"
+import type { OrderResponseDto, MenuItemResponseDto } from "@/types"
 import { StatusBadge } from "@/components/status-badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Separator } from "@/components/ui/separator"
+import { Badge } from "@/components/ui/badge"
 import {
   Select,
   SelectContent,
@@ -36,10 +35,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Trash2, Plus } from "lucide-react"
+import { Trash2, Plus, Package } from "lucide-react"
 import { toast } from "sonner"
 
-const PAYMENT_METHODS: PaymentMethod[] = ["Cash", "CreditCard", "MealVoucher"]
+const PRICING_LABELS: Record<string, string> = {
+  Standard: "Standard pricing",
+  HappyHour: "Happy Hour pricing",
+  GroupDiscount: "Group Discount pricing",
+}
 
 export default function OrderDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -53,11 +56,6 @@ export default function OrderDetailPage() {
   // add-item form
   const [addMenuItemId, setAddMenuItemId] = useState("")
   const [addQty, setAddQty] = useState("1")
-
-  // payment form
-  const [tipAmount, setTipAmount] = useState("0")
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("Cash")
-  const [paying, setPaying] = useState(false)
 
   const reload = () =>
     getOrder(Number(id)).then(setOrder).catch((e) => toast.error(e.message))
@@ -98,23 +96,6 @@ export default function OrderDetailPage() {
   const handleRemoveItem = (menuItemId: number) =>
     action(() => removeOrderItem(Number(id), menuItemId), "Item removed")
 
-  const handlePayment = async () => {
-    setPaying(true)
-    try {
-      await createPayment({
-        orderId: Number(id),
-        method: paymentMethod,
-        tipAmount: parseFloat(tipAmount) || 0,
-      })
-      toast.success("Payment processed")
-      await reload()
-    } catch (e: unknown) {
-      toast.error((e as Error).message)
-    } finally {
-      setPaying(false)
-    }
-  }
-
   const handleViewReceipt = async () => {
     try {
       const payment = await getPaymentByOrder(Number(id))
@@ -135,12 +116,17 @@ export default function OrderDetailPage() {
       {/* Header */}
       <div className="flex items-start justify-between mb-6">
         <div>
-          <div className="flex items-center gap-3 mb-1">
+          <div className="flex items-center gap-3 mb-1 flex-wrap">
             <h1 className="text-2xl font-semibold text-zinc-900">Order #{order.id}</h1>
             <StatusBadge status={order.status} />
+            {order.isToGo && (
+              <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 gap-1">
+                <Package className="w-3 h-3" /> To-go
+              </Badge>
+            )}
           </div>
           <p className="text-sm text-zinc-500">
-            Table {order.tableId} · Created {new Date(order.createdAt).toLocaleString()}
+            {order.tableId ? `Table ${order.tableId}` : "To-go"} · {PRICING_LABELS[order.pricingStrategy] ?? order.pricingStrategy} · Created {new Date(order.createdAt).toLocaleString()}
             {order.confirmedAt && ` · Confirmed ${new Date(order.confirmedAt).toLocaleString()}`}
             {order.servedAt && ` · Served ${new Date(order.servedAt).toLocaleString()}`}
             {order.paidAt && ` · Paid ${new Date(order.paidAt).toLocaleString()}`}
@@ -286,57 +272,12 @@ export default function OrderDetailPage() {
               </Button>
             </>
           )}
-        </div>
-      )}
-
-      {/* Payment section */}
-      {order.status === "Served" && (
-        <>
-          <Separator className="mb-6" />
-          <div className="bg-white rounded-xl border p-5">
-            <h2 className="font-semibold text-zinc-800 mb-4">Process Payment</h2>
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div className="space-y-1.5">
-                <Label>Tip Amount (€)</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  step="0.5"
-                  value={tipAmount}
-                  onChange={(e) => setTipAmount(e.target.value)}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Payment Method</Label>
-                <Select value={paymentMethod} onValueChange={(v) => setPaymentMethod(v as PaymentMethod)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PAYMENT_METHODS.map((m) => (
-                      <SelectItem key={m} value={m}>{m}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-zinc-600">Order total</span>
-              <span className="font-medium">€{Number(order.totalAmount).toFixed(2)}</span>
-            </div>
-            <div className="flex items-center justify-between mb-5">
-              <span className="text-zinc-600">Tip</span>
-              <span className="font-medium">€{(parseFloat(tipAmount) || 0).toFixed(2)}</span>
-            </div>
-            <div className="flex items-center justify-between text-lg font-bold mb-5">
-              <span>Total to charge</span>
-              <span>€{(Number(order.totalAmount) + (parseFloat(tipAmount) || 0)).toFixed(2)}</span>
-            </div>
-            <Button className="w-full" onClick={handlePayment} disabled={paying}>
-              {paying ? "Processing…" : "Confirm Payment"}
+          {order.status === "Served" && (
+            <Button onClick={() => router.push(`/orders/${id}/payment`)}>
+              Process Payment
             </Button>
-          </div>
-        </>
+          )}
+        </div>
       )}
 
       {/* Receipt link for paid orders */}

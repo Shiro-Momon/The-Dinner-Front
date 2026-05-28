@@ -25,20 +25,20 @@ import {
 } from "@/components/ui/select"
 import { Plus, Pencil, Trash2 } from "lucide-react"
 import { toast } from "sonner"
-import { CATEGORY_IDS, CATEGORY_LABEL } from "@/lib/categories"
+import { CATEGORY_KEYS, CATEGORY_LABEL, type CategoryKey } from "@/lib/categories"
 
 type FormState = {
   name: string
   price: string
-  category: number
+  category: CategoryKey
   isAvailable: boolean
 }
 
-const emptyForm: FormState = { name: "", price: "", category: 0, isAvailable: true }
+const emptyForm: FormState = { name: "", price: "", category: "Starter", isAvailable: true }
 
 export default function MenuPage() {
   const [items, setItems] = useState<MenuItemResponseDto[]>([])
-  const [activeTab, setActiveTab] = useState<"all" | number>("all")
+  const [activeTab, setActiveTab] = useState<"all" | CategoryKey>("all")
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editItem, setEditItem] = useState<MenuItemResponseDto | null>(null)
@@ -56,11 +56,11 @@ export default function MenuPage() {
   useEffect(() => { load() }, [])
 
   const filtered =
-    activeTab === "all" ? items : items.filter((i) => Number(i.category) === activeTab)
+    activeTab === "all" ? items : items.filter((i) => i.category === activeTab)
 
   const openEdit = (item: MenuItemResponseDto) => {
     setEditItem(item)
-    setForm({ name: item.name, price: String(item.price), category: Number(item.category), isAvailable: item.isAvailable })
+    setForm({ name: item.name, price: String(item.price), category: item.category as CategoryKey, isAvailable: item.isAvailable })
     setDialogOpen(true)
   }
 
@@ -105,14 +105,14 @@ export default function MenuPage() {
       </div>
 
       <Tabs
-        value={String(activeTab)}
-        onValueChange={(v) => setActiveTab(v === "all" ? "all" : Number(v))}
+        value={activeTab}
+        onValueChange={(v) => setActiveTab(v === "all" ? "all" : v as CategoryKey)}
         className="mb-6"
       >
         <TabsList>
           <TabsTrigger value="all">Tout</TabsTrigger>
-          {CATEGORY_IDS.map((c) => (
-            <TabsTrigger key={c} value={String(c)}>{CATEGORY_LABEL[c]}</TabsTrigger>
+          {CATEGORY_KEYS.map((c) => (
+            <TabsTrigger key={c} value={c}>{CATEGORY_LABEL[c]}</TabsTrigger>
           ))}
         </TabsList>
       </Tabs>
@@ -129,7 +129,7 @@ export default function MenuPage() {
                 <div className="flex items-start justify-between gap-2">
                   <div>
                     <p className="font-medium text-zinc-900">{item.name}</p>
-                    <p className="text-sm text-zinc-500">{CATEGORY_LABEL[Number(item.category)] ?? item.category}</p>
+                    <p className="text-sm text-zinc-500">{CATEGORY_LABEL[item.category as CategoryKey] ?? item.category}</p>
                   </div>
                   <Badge
                     variant="outline"
@@ -190,15 +190,15 @@ export default function MenuPage() {
             <div className="space-y-1.5">
               <Label>Category</Label>
               <Select
-                value={String(form.category)}
-                onValueChange={(v) => setForm({ ...form, category: Number(v) })}
+                value={form.category}
+                onValueChange={(v) => setForm({ ...form, category: v as CategoryKey })}
               >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {CATEGORY_IDS.map((c) => (
-                    <SelectItem key={c} value={String(c)}>{CATEGORY_LABEL[c]}</SelectItem>
+                  {CATEGORY_KEYS.map((c) => (
+                    <SelectItem key={c} value={c}>{CATEGORY_LABEL[c]}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

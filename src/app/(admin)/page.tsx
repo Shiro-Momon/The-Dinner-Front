@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { getTables, getOrders } from "@/lib/api"
+import { getTables, getOrders, releaseTable } from "@/lib/api"
 import type { TableResponseDto, OrderResponseDto } from "@/types"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Users, Plus } from "lucide-react"
+import { Users, Plus, X } from "lucide-react"
 import { toast } from "sonner"
 
 export default function DashboardPage() {
@@ -17,7 +17,7 @@ export default function DashboardPage() {
   const [ready, setReady] = useState<OrderResponseDto[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
+  const load = () =>
     Promise.all([
       getTables(),
       getOrders("Pending"),
@@ -32,7 +32,18 @@ export default function DashboardPage() {
       })
       .catch((e) => toast.error(e.message))
       .finally(() => setLoading(false))
-  }, [])
+
+  useEffect(() => { load() }, [])
+
+  const handleClearTable = async (tableId: number) => {
+    try {
+      await releaseTable(tableId)
+      toast.success("Table cleared")
+      load()
+    } catch (e: unknown) {
+      toast.error((e as Error).message)
+    }
+  }
 
   if (loading) {
     return (
@@ -90,11 +101,22 @@ export default function DashboardPage() {
                 <Users className="w-3.5 h-3.5" />
                 <span>{table.capacity} seats</span>
               </div>
-              <Link href={`/orders/new?tableId=${table.id}`}>
-                <Button size="sm" variant="outline" className="w-full gap-1 text-xs">
-                  <Plus className="w-3.5 h-3.5" /> New Order
+              {table.isOccupied ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="w-full gap-1 text-xs text-red-600 border-red-200 hover:bg-red-50"
+                  onClick={() => handleClearTable(table.id)}
+                >
+                  <X className="w-3.5 h-3.5" /> Clear Table
                 </Button>
-              </Link>
+              ) : (
+                <Link href={`/orders/new?tableId=${table.id}`}>
+                  <Button size="sm" variant="outline" className="w-full gap-1 text-xs">
+                    <Plus className="w-3.5 h-3.5" /> New Order
+                  </Button>
+                </Link>
+              )}
             </CardContent>
           </Card>
         ))}
