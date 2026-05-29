@@ -14,7 +14,7 @@ import {
   cancelOrder,
   getPaymentByOrder,
 } from "@/lib/api"
-import type { OrderResponseDto, MenuItemResponseDto } from "@/types"
+import type { OrderResponseDto, MenuItemResponseDto, OrderItemResponseDto } from "@/types"
 import { StatusBadge } from "@/components/status-badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
