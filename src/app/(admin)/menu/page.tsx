@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { getMenu, createMenuItem, updateMenuItem, deleteMenuItem } from "@/lib/api"
+import { getMenu, createMenuItem, updateMenuItem, deleteMenuItem, uploadMenuImage } from "@/lib/api"
 import type { MenuItemResponseDto } from "@/types"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -32,9 +32,10 @@ type FormState = {
   price: string
   category: CategoryKey
   isAvailable: boolean
+  imageUrl: string
 }
 
-const emptyForm: FormState = { name: "", price: "", category: "Starter", isAvailable: true }
+const emptyForm: FormState = { name: "", price: "", category: "Starter", isAvailable: true, imageUrl: "" }
 
 export default function MenuPage() {
   const [items, setItems] = useState<MenuItemResponseDto[]>([])
@@ -44,6 +45,7 @@ export default function MenuPage() {
   const [editItem, setEditItem] = useState<MenuItemResponseDto | null>(null)
   const [form, setForm] = useState<FormState>(emptyForm)
   const [saving, setSaving] = useState(false)
+  const [uploading, setUploading] = useState(false)
 
   const load = () => {
     setLoading(true)
@@ -60,14 +62,42 @@ export default function MenuPage() {
 
   const openEdit = (item: MenuItemResponseDto) => {
     setEditItem(item)
-    setForm({ name: item.name, price: String(item.price), category: item.category as CategoryKey, isAvailable: item.isAvailable })
+    setForm({
+      name: item.name,
+      price: String(item.price),
+      category: item.category as CategoryKey,
+      isAvailable: item.isAvailable,
+      imageUrl: item.imageUrl ?? ""
+    })
     setDialogOpen(true)
+  }
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setUploading(true)
+    try {
+      const { imageUrl } = await uploadMenuImage(file)
+      setForm((prev) => ({ ...prev, imageUrl }))
+      toast.success("Image uploaded successfully!")
+    } catch (e: unknown) {
+      toast.error((e as Error).message)
+    } finally {
+      setUploading(false)
+    }
   }
 
   const handleSave = async () => {
     setSaving(true)
     try {
-      const data = { name: form.name, price: parseFloat(form.price), category: form.category, isAvailable: form.isAvailable }
+      const data = {
+        name: form.name,
+        price: parseFloat(form.price),
+        category: form.category,
+        isAvailable: form.isAvailable,
+        imageUrl: form.imageUrl || undefined
+      }
       if (editItem) {
         await updateMenuItem(editItem.id, data)
         toast.success("Item updated")
@@ -124,39 +154,48 @@ export default function MenuPage() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((item) => (
-            <Card key={item.id} className="bg-white">
-              <CardContent className="p-5 flex flex-col gap-3">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <p className="font-medium text-zinc-900">{item.name}</p>
-                    <p className="text-sm text-zinc-500">{CATEGORY_LABEL[item.category as CategoryKey] ?? item.category}</p>
+            <Card key={item.id} className="bg-white overflow-hidden flex flex-col justify-between">
+              <div>
+                {item.imageUrl ? (
+                  <img src={item.imageUrl} alt={item.name} className="w-full h-40 object-cover border-b" />
+                ) : (
+                  <div className="w-full h-40 bg-zinc-50 border-b flex items-center justify-center text-zinc-400">
+                    <span className="text-xs font-medium">No Image</span>
                   </div>
-                  <Badge
-                    variant="outline"
-                    className={
-                      item.isAvailable
-                        ? "bg-green-50 text-green-700 border-green-200"
-                        : "bg-zinc-100 text-zinc-500 border-zinc-200"
-                    }
-                  >
-                    {item.isAvailable ? "Available" : "Unavailable"}
-                  </Badge>
-                </div>
-                <p className="text-lg font-semibold text-zinc-800">€{Number(item.price).toFixed(2)}</p>
-                <div className="flex gap-2 pt-1">
-                  <Button size="sm" variant="outline" className="gap-1" onClick={() => openEdit(item)}>
-                    <Pencil className="w-3.5 h-3.5" /> Edit
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="gap-1 text-red-600 border-red-200 hover:bg-red-50"
-                    onClick={() => handleDelete(item)}
-                  >
-                    <Trash2 className="w-3.5 h-3.5" /> Delete
-                  </Button>
-                </div>
-              </CardContent>
+                )}
+                <CardContent className="p-5 flex flex-col gap-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="font-medium text-zinc-900">{item.name}</p>
+                      <p className="text-sm text-zinc-500">{CATEGORY_LABEL[item.category as CategoryKey] ?? item.category}</p>
+                    </div>
+                    <Badge
+                      variant="outline"
+                      className={
+                        item.isAvailable
+                          ? "bg-green-50 text-green-700 border-green-200"
+                          : "bg-zinc-100 text-zinc-500 border-zinc-200"
+                      }
+                    >
+                      {item.isAvailable ? "Available" : "Unavailable"}
+                    </Badge>
+                  </div>
+                  <p className="text-lg font-semibold text-zinc-800">€{Number(item.price).toFixed(2)}</p>
+                  <div className="flex gap-2 pt-1">
+                    <Button size="sm" variant="outline" className="gap-1" onClick={() => openEdit(item)}>
+                      <Pencil className="w-3.5 h-3.5" /> Edit
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="gap-1 text-red-600 border-red-200 hover:bg-red-50"
+                      onClick={() => handleDelete(item)}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" /> Delete
+                    </Button>
+                  </div>
+                </CardContent>
+              </div>
             </Card>
           ))}
         </div>
@@ -202,6 +241,33 @@ export default function MenuPage() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Menu Item Image</Label>
+              <div className="flex flex-col gap-3">
+                {form.imageUrl && (
+                  <div className="relative w-full h-32 rounded-lg overflow-hidden border">
+                    <img src={form.imageUrl} alt="Preview" className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => setForm((prev) => ({ ...prev, imageUrl: "" }))}
+                      className="absolute top-1.5 right-1.5 bg-red-600 hover:bg-red-700 text-white text-[10px] font-bold py-1 px-2 rounded shadow"
+                    >
+                      Delete Image
+                    </button>
+                  </div>
+                )}
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    disabled={uploading}
+                    className="flex-1 cursor-pointer file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-zinc-100 file:text-zinc-700 hover:file:bg-zinc-200"
+                  />
+                  {uploading && <span className="text-xs text-zinc-400">Uploading…</span>}
+                </div>
+              </div>
             </div>
             <div className="flex items-center gap-3">
               <input

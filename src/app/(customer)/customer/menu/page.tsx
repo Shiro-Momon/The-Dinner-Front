@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
-import { Minus, Plus, ShoppingCart, ArrowLeft, CheckCircle, CreditCard, Banknote, Package } from "lucide-react"
+import { Minus, Plus, ShoppingCart, ArrowLeft, CheckCircle, CreditCard, Banknote, Package, Image as ImageIcon } from "lucide-react"
 import { toast } from "sonner"
 import { CATEGORY_KEYS, CATEGORY_LABEL, type CategoryKey } from "@/lib/categories"
 
@@ -257,11 +257,24 @@ function CustomerMenuContent() {
 
       <div className="space-y-3 mb-8">
         {filteredMenu.map((item) => (
-          <div key={item.id} className="bg-white rounded-2xl border p-4 flex items-center justify-between gap-4">
-            <div className="min-w-0">
-              <p className="font-medium text-zinc-900">{item.name}</p>
-              <p className="text-sm text-zinc-500">{CATEGORY_LABEL[item.category as CategoryKey] ?? item.category}</p>
-              <p className="text-base font-semibold text-zinc-800 mt-0.5">€{Number(item.price).toFixed(2)}</p>
+          <div key={item.id} className="bg-white rounded-2xl border p-4 flex items-center justify-between gap-4 hover:shadow-md transition duration-200">
+            <div className="flex items-center gap-4 min-w-0 flex-1">
+              {item.imageUrl ? (
+                <img
+                  src={item.imageUrl}
+                  alt={item.name}
+                  className="w-20 h-20 sm:w-24 sm:h-24 rounded-xl object-cover shrink-0 border border-zinc-100"
+                />
+              ) : (
+                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-xl bg-zinc-50 border border-zinc-100 flex items-center justify-center text-zinc-400 shrink-0">
+                  <ImageIcon className="w-6 h-6 stroke-[1.5]" />
+                </div>
+              )}
+              <div className="min-w-0 flex-1">
+                <p className="font-medium text-zinc-900 truncate">{item.name}</p>
+                <p className="text-sm text-zinc-500">{CATEGORY_LABEL[item.category as CategoryKey] ?? item.category}</p>
+                <p className="text-base font-semibold text-zinc-800 mt-0.5">€{Number(item.price).toFixed(2)}</p>
+              </div>
             </div>
             <div className="flex items-center gap-3 shrink-0">
               <button

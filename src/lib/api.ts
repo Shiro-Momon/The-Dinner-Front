@@ -43,11 +43,12 @@ export const createMenuItem = (data: {
   price: number
   category: string
   isAvailable: boolean
+  imageUrl?: string
 }) => apiFetch<MenuItemResponseDto>("/api/menu", { method: "POST", body: JSON.stringify(data) })
 
 export const updateMenuItem = (
   id: number,
-  data: { name: string; price: number; category: string; isAvailable: boolean }
+  data: { name: string; price: number; category: string; isAvailable: boolean; imageUrl?: string }
 ) =>
   apiFetch<MenuItemResponseDto>(`/api/menu/${id}`, {
     method: "PUT",
@@ -56,6 +57,21 @@ export const updateMenuItem = (
 
 export const deleteMenuItem = (id: number) =>
   apiFetch<void>(`/api/menu/${id}`, { method: "DELETE" })
+
+export const uploadMenuImage = (file: File) => {
+  const formData = new FormData()
+  formData.append("file", file)
+  return fetch("/api/menu/images", {
+    method: "POST",
+    body: formData,
+  }).then(async (res) => {
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}))
+      throw new Error(body.error ?? `Upload failed: ${res.status}`)
+    }
+    return res.json() as Promise<{ imageUrl: string }>
+  })
+}
 
 // ── Tables ────────────────────────────────────────────────────────────────────
 

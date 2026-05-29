@@ -17,6 +17,7 @@ export interface MenuItemResponseDto {
   price: number
   category: string
   isAvailable: boolean
+  imageUrl?: string
 }
 
 export interface TableResponseDto {
