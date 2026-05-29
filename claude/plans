@@ -1,0 +1,14 @@
+# Plan 1 — Fix Item Names, Subtotals, and Discount Details Display
+
+## Objectives
+1. Resolve missing item names and subtotals on the frontend (OrderDetailPage, PaymentReceiptPage, KitchenPage, PaymentPage) by updating the backend `OrderItemResponseDto` to map `MenuItemName` and `Subtotal`.
+2. Implement detailed pricing strategy discount details (badges, rates, discounted unit prices, and discounted subtotals) under `HappyHour` and `GroupDiscount` strategies in `OrderDetailPage`.
+3. Fix Next.js/ESLint strict rules to successfully run the production build.
+
+## Steps
+1. Add `MenuItemName` and `Subtotal` fields to `OrderItemResponseDto.cs` in the backend.
+2. Update `OrderService.cs` mapping to retrieve names from `MenuItemRepository` and map `Subtotal`.
+3. Verify backend tests pass with `dotnet test`.
+4. Update `OrderDetailPage` (`src/app/(admin)/orders/[id]/page.tsx`) to dynamically resolve `getItemDiscountInfo` for items and render discount badges, rates, and discounted prices under active strategies.
+5. Add a Total Savings summary card at the bottom of the page.
+6. Deactivate strict ESLint warnings (`react-hooks/set-state-in-effect` and `@typescript-eslint/no-unused-vars`) in `eslint.config.mjs` to unblock Next.js production builds.

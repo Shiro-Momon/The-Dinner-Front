@@ -1,0 +1,11 @@
+# Commandes exécutées
+
+## Phase 1 — Fix Item Names, Subtotals, and Discount Details Display
+
+```bash
+# Verify backend builds and runs tests
+dotnet test
+
+# Verify frontend lint succeeds
+npm run lint
+```

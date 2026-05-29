@@ -57,8 +57,46 @@ export default function OrderDetailPage() {
   const [addMenuItemId, setAddMenuItemId] = useState("")
   const [addQty, setAddQty] = useState("1")
 
-  const reload = () =>
-    getOrder(Number(id)).then(setOrder).catch((e) => toast.error(e.message))
+  interface DiscountInfo {
+    hasDiscount: boolean
+    discountType?: string
+    rate?: string
+    discountedUnitPrice?: number
+    discountedSubtotal?: number
+  }
+
+  const getItemDiscountInfo = (item: OrderItemResponseDto): DiscountInfo => {
+    const menuItem = menuItems.find(m => m.id === item.menuItemId);
+    const category = menuItem?.category;
+
+    if (order?.pricingStrategy === "HappyHour") {
+      if (category === "Beverage") {
+        const discountedUnitPrice = item.unitPrice * 0.8;
+        return {
+          hasDiscount: true,
+          discountType: "Happy Hour",
+          rate: "20%",
+          discountedUnitPrice,
+          discountedSubtotal: item.quantity * discountedUnitPrice
+        };
+      }
+    } else if (order?.pricingStrategy === "GroupDiscount") {
+      const totalQuantity = order.items.reduce((sum, i) => sum + i.quantity, 0);
+      if (totalQuantity > 8) {
+        const discountedUnitPrice = item.unitPrice * 0.9;
+        return {
+          hasDiscount: true,
+          discountType: "Group Discount",
+          rate: "10%",
+          discountedUnitPrice,
+          discountedSubtotal: item.quantity * discountedUnitPrice
+        };
+      }
+    }
+
+    return { hasDiscount: false };
+  }
+
 
   useEffect(() => {
     Promise.all([getOrder(Number(id)), getMenu()])
@@ -148,27 +186,61 @@ export default function OrderDetailPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {order.items.map((item) => (
-              <TableRow key={item.menuItemId}>
-                <TableCell>{item.menuItemName}</TableCell>
-                <TableCell>{item.quantity}</TableCell>
-                <TableCell>€{Number(item.unitPrice).toFixed(2)}</TableCell>
-                <TableCell>€{Number(item.subtotal).toFixed(2)}</TableCell>
-                {isPending && (
+            {order.items.map((item) => {
+              const discountInfo = getItemDiscountInfo(item);
+              const displayName = item.menuItemName && item.menuItemName !== "Unknown Item"
+                ? item.menuItemName
+                : (menuItems.find(m => m.id === item.menuItemId)?.name ?? `Item #${item.menuItemId}`);
+
+              return (
+                <TableRow key={item.menuItemId}>
                   <TableCell>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                      onClick={() => handleRemoveItem(item.menuItemId)}
-                      disabled={busy}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    <div className="font-medium text-zinc-900">{displayName}</div>
+                    {discountInfo.hasDiscount && (
+                      <div className="mt-1 flex items-center gap-1.5">
+                        <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px] py-0 px-1.5 h-4 gap-0.5" variant="outline">
+                          {discountInfo.discountType} (-{discountInfo.rate})
+                        </Badge>
+                      </div>
+                    )}
                   </TableCell>
-                )}
-              </TableRow>
-            ))}
+                  <TableCell className="text-zinc-600">{item.quantity}</TableCell>
+                  <TableCell>
+                    {discountInfo.hasDiscount ? (
+                      <div className="flex flex-col">
+                        <span className="text-xs line-through text-zinc-400">€{Number(item.unitPrice).toFixed(2)}</span>
+                        <span className="text-sm font-semibold text-emerald-600">€{Number(discountInfo.discountedUnitPrice).toFixed(2)}</span>
+                      </div>
+                    ) : (
+                      <span className="text-zinc-700">€{Number(item.unitPrice).toFixed(2)}</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {discountInfo.hasDiscount ? (
+                      <div className="flex flex-col">
+                        <span className="text-xs line-through text-zinc-400">€{Number(item.subtotal).toFixed(2)}</span>
+                        <span className="text-sm font-bold text-emerald-700">€{Number(discountInfo.discountedSubtotal).toFixed(2)}</span>
+                      </div>
+                    ) : (
+                      <span className="text-zinc-700">€{Number(item.subtotal).toFixed(2)}</span>
+                    )}
+                  </TableCell>
+                  {isPending && (
+                    <TableCell>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                        onClick={() => handleRemoveItem(item.menuItemId)}
+                        disabled={busy}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </TableCell>
+                  )}
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </div>
@@ -205,6 +277,28 @@ export default function OrderDetailPage() {
             <Button onClick={handleAddItem} disabled={busy} className="gap-1">
               <Plus className="w-4 h-4" /> Add
             </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Active Strategy & Savings Summary */}
+      {order.pricingStrategy !== "Standard" && (
+        <div className="bg-emerald-50/50 border border-emerald-100 rounded-xl p-4 mb-6 flex justify-between items-center">
+          <div>
+            <p className="text-sm font-semibold text-emerald-800">
+              Active Strategy: {PRICING_LABELS[order.pricingStrategy]}
+            </p>
+            <p className="text-xs text-emerald-600 mt-0.5">
+              {order.pricingStrategy === "HappyHour"
+                ? "A 20% discount has been successfully applied to all beverages in this order."
+                : "A 10% discount has been successfully applied to all items in this order."}
+            </p>
+          </div>
+          <div className="text-right">
+            <span className="text-xs text-zinc-500 block">Total Saved</span>
+            <span className="text-lg font-bold text-emerald-700">
+              €{(order.items.reduce((sum, i) => sum + i.subtotal, 0) - order.totalAmount).toFixed(2)}
+            </span>
           </div>
         </div>
       )}
